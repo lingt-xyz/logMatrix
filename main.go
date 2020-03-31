@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	input := flag.String("input", "", "log file to be indexed.")
+	input := flag.String("input", "", "Path (absolute or relative) of the log file to be indexed.\ne.g.: -input /test/seq2seq.txt")
 	flag.Parse()
 	if *input == ""{
 		log.Fatalf("No input log file was given.")
