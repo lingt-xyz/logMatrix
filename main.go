@@ -1,0 +1,103 @@
+package main
+
+import (
+	"bufio"
+	"encoding/csv"
+	"flag"
+	"log"
+	"os"
+	"strings"
+)
+
+func main() {
+	input := flag.String("input", "", "log file to be indexed.")
+	if *input == ""{
+		log.Fatalf("No input log file was given.")
+	}
+	rows := readLog(*input)
+	writeCSV(rows, *input+".csv")
+}
+
+type row struct {
+	epoch       string
+	totalTime   string
+	timePerStep string
+	loss        string
+	accuracy    string
+	valLost     string
+	valAccuracy string
+}
+
+func (r *row) toColumns() []string {
+	return []string{r.epoch, r.totalTime, r.timePerStep, r.loss, r.accuracy, r.valLost, r.valAccuracy}
+}
+
+func readLog(filePath string) []row {
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	rows := make([]row, 0, 2<<5)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		if strings.TrimSpace(scanner.Text()) == "" {
+			continue
+		}
+		epoch := strings.Split(strings.Split(scanner.Text(), " ")[1], "/")[0]
+		if !scanner.Scan() {
+			log.Printf("Incompelte file %q", filePath)
+		}
+		if strings.TrimSpace(scanner.Text()) == "" {
+			continue
+		}
+		ss := strings.Split(scanner.Text(), "-")
+		timeS := strings.Split(strings.TrimSpace(ss[1]), " ")
+		totalTimeS := strings.TrimSpace(timeS[0])
+		totalTime := totalTimeS[:len(totalTimeS)-1]
+		timePerStepS := strings.TrimSpace(timeS[1])
+		timePerStep := timePerStepS[:len(timePerStepS)-len("s/step")]
+		lossS := strings.TrimSpace(ss[2])
+		loss := lossS[len("loss: "):]
+		accuracyS := strings.TrimSpace(ss[3])
+		accuracy := accuracyS[len("accuracy: "):]
+		valLostS := strings.TrimSpace(ss[4])
+		valLost := valLostS[len("val_loss: "):]
+		valAccuracyS := strings.TrimSpace(ss[5])
+		valAccuracy := valAccuracyS[len("val_accuracy: "):]
+		rows = append(rows, row{
+			epoch:       epoch,
+			totalTime:   totalTime,
+			timePerStep: timePerStep,
+			loss:        loss,
+			accuracy:    accuracy,
+			valLost:     valLost,
+			valAccuracy: valAccuracy,
+		})
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	return rows
+}
+
+func writeCSV(rows []row, filePath string) {
+	headers := row{"epoch", "total time", "time per step", "loss", "accuracy", "val_lost", "val_accuracy"}
+	log.Printf("%v", headers)
+	log.Printf("%v", rows)
+
+	output, err := os.Create(filePath)
+	if err != nil {
+		log.Fatalf("Cannot create output file, got error: %v", err)
+	}
+	defer output.Close()
+	writer := csv.NewWriter(output)
+	defer writer.Flush()
+	writer.Write(headers.toColumns())
+	for i := range rows{
+		writer.Write(rows[i].toColumns())
+	}
+}
