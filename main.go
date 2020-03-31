@@ -29,10 +29,12 @@ type row struct {
 	valAccuracy string
 }
 
+// toColumns converts a row to a list of string to be written to a CSV file
 func (r *row) toColumns() []string {
 	return []string{r.epoch, r.totalTime, r.timePerStep, r.loss, r.accuracy, r.valLost, r.valAccuracy}
 }
 
+// readLog reads a log file into a list of `row`
 func readLog(filePath string) []row {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -43,14 +45,16 @@ func readLog(filePath string) []row {
 	rows := make([]row, 0, 2<<5)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		if strings.TrimSpace(scanner.Text()) == "" {
+		if strings.TrimSpace(scanner.Text()) == "" { // ignore the ending empty lines
 			continue
 		}
 		epoch := strings.Split(strings.Split(scanner.Text(), " ")[1], "/")[0]
+
+		// every two lines construct a row, so read two line in every loop
 		if !scanner.Scan() {
 			log.Printf("Incompelte file %q", filePath)
 		}
-		if strings.TrimSpace(scanner.Text()) == "" {
+		if strings.TrimSpace(scanner.Text()) == "" { // ignore the ending empty lines
 			continue
 		}
 		ss := strings.Split(scanner.Text(), "-")
@@ -85,6 +89,7 @@ func readLog(filePath string) []row {
 	return rows
 }
 
+// writeCSV writes a header and `rows` into the file `filePath`
 func writeCSV(rows []row, filePath string) {
 	headers := row{"epoch", "total time", "time per step", "loss", "accuracy", "val_lost", "val_accuracy"}
 	output, err := os.Create(filePath)
