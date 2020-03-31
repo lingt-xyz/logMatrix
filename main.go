@@ -11,6 +11,7 @@ import (
 
 func main() {
 	input := flag.String("input", "", "log file to be indexed.")
+	flag.Parse()
 	if *input == ""{
 		log.Fatalf("No input log file was given.")
 	}
@@ -86,9 +87,6 @@ func readLog(filePath string) []row {
 
 func writeCSV(rows []row, filePath string) {
 	headers := row{"epoch", "total time", "time per step", "loss", "accuracy", "val_lost", "val_accuracy"}
-	log.Printf("%v", headers)
-	log.Printf("%v", rows)
-
 	output, err := os.Create(filePath)
 	if err != nil {
 		log.Fatalf("Cannot create output file, got error: %v", err)
