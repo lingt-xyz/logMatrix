@@ -1,3 +1,7 @@
+# Deprecated
+
+Use `goTool`
+
 # logMatrix
 metrics of output from ml
 
